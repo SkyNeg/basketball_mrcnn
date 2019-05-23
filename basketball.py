@@ -50,8 +50,6 @@ COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 # through the command line argument --logs
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
-PROJECT_PREFIX = 'via_basketball_'
-
 ############################################################
 #  Configurations
 ############################################################
@@ -95,27 +93,49 @@ class BasketballDataset(utils.Dataset):
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
-        # VGG Image Annotator (up to version 1.6) saves each image in the form:
-        # { 'filename': '28503151_5b5b7ec140_b.jpg',
-        #   'regions': {
-        #       '0': {
-        #           'region_attributes': {},
-        #           'shape_attributes': {
-        #               'all_points_x': [...],
-        #               'all_points_y': [...],
-        #               'name': 'polygon'}},
-        #       ... more regions ...
-        #   },
-        #   'size': 100202
-        # }
-        # We mostly care about the x and y coordinates of each region
-        # Note: In VIA 2.0, regions was changed from a dict to a list.
+        """File structure
+        "0001.jpg325950": {
+          "filename": "0001.jpg",
+          "size": 325950,
+          "regions": [
+            {
+              "shape_attributes": {
+                "name": "polyline",
+                "all_points_x": [ 214, 237, 236, 232, 232, 217, 217, 210, 214 ],
+                "all_points_y": [ 239, 237, 240, 253, 264, 266, 254, 245, 239 ]
+              },
+              "region_attributes": { "class": "2" }
+            },
+            {
+              "shape_attributes": {
+                "name": "polyline",
+                "all_points_x": [ 158, 248, 254, 257, 259, 257, 232, 232, 235, 252, 245, 163, 169, 206, 203, 195, 193, 224, 225, 222, 221, 196, 198, 205, 206, 215, 217, 163, 161, 159, 162, 157, 157 ],
+                "all_points_y": [ 189, 184, 228, 228, 252, 253, 256, 253, 247, 247, 189, 193, 255, 250, 240, 240, 216, 215, 235, 235, 217, 219, 237, 236, 251, 250, 257, 263, 261, 235, 234, 189, 189 ]
+              },
+              "region_attributes": { "class": "3" }
+            },
+            {
+              "shape_attributes": {
+                "name": "polyline",
+                "all_points_x": [ 689, 718, 722, 720, 711, 710, 695, 690, 690, 692, 687, 689 ],
+                "all_points_y": [ 243, 243, 250, 260, 263, 268, 272, 270, 259, 257, 247, 243 ]
+              },
+              "region_attributes": { "class": "2" }
+            },
+            {
+              "shape_attributes": {
+                "name": "polyline",
+                "all_points_x": [ 669, 767, 770, 775, 774, 771, 722, 723, 723, 732, 731, 704, 704, 712, 710, 701, 700, 734, 735, 723, 724, 765, 764, 670, 673, 687, 709, 707, 689, 671, 668, 667, 669, 667, 670 ],
+                "all_points_y": [ 180, 178, 225, 225, 253, 256, 255, 247, 241, 241, 217, 217, 239, 240, 241, 242, 213, 214, 244, 244, 247, 248, 183, 184, 245, 246, 247, 250, 252, 252, 249, 221, 220, 182, 180 ]
+              },
+              "region_attributes": { "class": "3" }
+            }
+          ],
+          "file_attributes": {}
+        },
+        """
 
         # Add classes
-        via_project = json.load(open(os.path.join(dataset_dir, "via_basketball_" + subset + ".json")))
-        #classes = list(via_project['_via_attributes'].values())[0]['class']['options']
-        #for ckey, cval in classes.items():
-        #    self.add_class("basketball", ckey, cval)
         self.add_class("basketball", 1, "ball")
         self.add_class("basketball", 2, "basket")
         self.add_class("basketball", 3, "board")
@@ -127,12 +147,11 @@ class BasketballDataset(utils.Dataset):
         self.add_class("basketball", 9, "layout")
         self.add_class("basketball", 10, "slam dunk")
 
-        #via_project = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
-        regions = list(via_project['_via_img_metadata'].values())
+        via_project = json.load(open(os.path.join(dataset_dir, "via_region_data.json")))
 
         # The VIA tool saves images in the JSON even if they don't have any
         # annotations. Skip unannotated images.
-        regions = [r for r in regions if r['regions']]
+        regions = [r for r in via_project.values() if r['regions']]
 
         # Add images
         for r in regions:
